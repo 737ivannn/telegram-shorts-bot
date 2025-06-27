@@ -8,7 +8,7 @@ from telegram.ext import (
 )
 from telegram.constants import ChatAction
 
-BOT_TOKEN = os.getenv("BOT_TOKEN") or "your-token-here"
+BOT_TOKEN = os.getenv("BOT_TOKEN") or "paste-your-token-here"
 
 VIDEO_DIR = "videos"
 
@@ -34,4 +34,3 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("short", short))
 
     app.run_polling()
-
