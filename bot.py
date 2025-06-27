@@ -1,31 +1,37 @@
 import os
 import random
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram import Update
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+)
+from telegram.constants import ChatAction
 
-BOT_TOKEN = "7963868497:AAFsgZHqtsTaIDXP0wNsx0ogYSQAUQslE8M"
-VIDEO_FOLDER = "videos"
+BOT_TOKEN = os.getenv("BOT_TOKEN") or "your-token-here"
+
+VIDEO_DIR = "videos"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("Next 🎥", callback_data="next")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Welcome! Click below to get a video.", reply_markup=reply_markup)
+    await update.message.reply_text("👋 Welcome! Send /short to get a random short video.")
 
-async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    video_files = os.listdir(VIDEO_FOLDER)
-    if not video_files:
-        await query.message.reply_text("No videos available.")
+async def short(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    files = [f for f in os.listdir(VIDEO_DIR) if f.endswith(".mp4") or f.endswith(".mov")]
+    if not files:
+        await update.message.reply_text("No videos found.")
         return
-    video_path = os.path.join(VIDEO_FOLDER, random.choice(video_files))
-    keyboard = [[InlineKeyboardButton("Next 🎥", callback_data="next")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await context.bot.send_video(chat_id=query.message.chat_id, video=open(video_path, 'rb'), reply_markup=reply_markup)
+
+    chosen = random.choice(files)
+    video_path = os.path.join(VIDEO_DIR, chosen)
+
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.UPLOAD_VIDEO)
+    await context.bot.send_video(chat_id=update.effective_chat.id, video=open(video_path, "rb"))
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
+
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button_click))
-    print("Bot is running...")
+    app.add_handler(CommandHandler("short", short))
+
     app.run_polling()
+
